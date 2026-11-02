@@ -813,6 +813,38 @@ html,body{overflow-x:clip}
   .scratch-del{opacity:.55}
   .scratch-actions .btn{flex:1;min-height:38px}
 }
+
+/* ===== 随手记窗口：拖动 + 八向缩放 ===== */
+.scratch-panel{overflow:hidden}
+.scratch-head{flex:none;cursor:grab;touch-action:none;user-select:none}
+.scratch-panel.is-moving .scratch-head{cursor:grabbing}
+.scratch-head .scratch-close{cursor:pointer}
+.scratch-body{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;padding-right:2px;margin-right:-2px}
+.window-resize-handle{position:absolute;z-index:20;display:block;padding:0;border:0;border-radius:0;background:transparent;touch-action:none}
+.window-resize-handle:hover{background:color-mix(in srgb,var(--accent) 20%,transparent)}
+.window-resize-handle:focus-visible{background:color-mix(in srgb,var(--accent) 34%,transparent);outline:2px solid var(--accent);outline-offset:-2px}
+.window-resize-handle.resize-n,.window-resize-handle.resize-s{left:14px;right:14px;width:auto;height:6px;cursor:ns-resize}
+.window-resize-handle.resize-n{top:0}
+.window-resize-handle.resize-s{bottom:0}
+.window-resize-handle.resize-e,.window-resize-handle.resize-w{top:14px;bottom:14px;width:6px;height:auto;cursor:ew-resize}
+.window-resize-handle.resize-e{right:0}
+.window-resize-handle.resize-w{left:0}
+.window-resize-handle.resize-nw,.window-resize-handle.resize-ne,.window-resize-handle.resize-sw,.window-resize-handle.resize-se{width:14px;height:14px}
+.window-resize-handle.resize-nw{left:0;top:0;cursor:nwse-resize;border-radius:15px 0 0 0}
+.window-resize-handle.resize-ne{right:0;top:0;cursor:nesw-resize;border-radius:0 15px 0 0}
+.window-resize-handle.resize-sw{left:0;bottom:0;cursor:nesw-resize;border-radius:0 0 0 15px}
+.window-resize-handle.resize-se{right:0;bottom:0;cursor:nwse-resize;border-radius:0 0 15px 0}
+body.window-interacting,body.window-interacting *{user-select:none!important}
+body.window-interacting .scratch-panel{box-shadow:0 18px 48px -30px rgba(14,32,26,.45)}
+.scratch-panel.is-moving{will-change:transform}
+@media(max-width:760px){
+  .scratch-panel{left:12px!important;right:12px!important;top:79px!important;width:auto!important;height:auto!important;max-width:none!important;max-height:calc(100dvh - 91px)!important}
+  .scratch-head{cursor:default}
+  .window-resize-handle{display:none}
+}
+@media(max-width:640px){
+  .scratch-panel{top:72px!important;max-height:calc(100dvh - 88px)!important}
+}
 </style>
 </head>
 <body data-theme="studio" data-view="home">
@@ -898,16 +930,18 @@ html,body{overflow-x:clip}
       <div><div class="scratch-kicker">QUICK NOTES</div><h3 class="scratch-title" id="scratchTitle">随手记</h3></div>
       <button class="scratch-close" id="scratchClose" type="button" aria-label="关闭随手记">×</button>
     </div>
-    <p class="scratch-sub">全局草稿，所有页面共用同一份内容；切换页面不会收起，只保存在这台设备的浏览器里。</p>
-    <textarea id="scratchInput" placeholder="把刚想到的一句、一个条件、一个待验证的问题写在这里……" aria-label="随手记草稿"></textarea>
-    <div class="scratch-meta"><span id="scratchStatus">等待输入</span><span id="scratchCount">0 字</span></div>
-    <div class="scratch-actions">
-      <button class="btn primary sm" id="scratchSave" type="button">存为一条</button>
-      <button class="btn sm" id="scratchCopy" type="button">复制</button>
-      <button class="btn ghost sm" id="scratchClear" type="button">清空</button>
+    <div class="scratch-body">
+      <p class="scratch-sub">全局草稿，切页不收起；拖动标题移动，拖边缘或四角缩放；只保存在本机浏览器。</p>
+      <textarea id="scratchInput" placeholder="把刚想到的一句、一个条件、一个待验证的问题写在这里……" aria-label="随手记草稿"></textarea>
+      <div class="scratch-meta"><span id="scratchStatus">等待输入</span><span id="scratchCount">0 字</span></div>
+      <div class="scratch-actions">
+        <button class="btn primary sm" id="scratchSave" type="button">存为一条</button>
+        <button class="btn sm" id="scratchCopy" type="button">复制</button>
+        <button class="btn ghost sm" id="scratchClear" type="button">清空</button>
+      </div>
+      <div class="scratch-list-head"><span>已存记录</span><span id="scratchTotal">0</span></div>
+      <div class="scratch-list" id="scratchList"></div>
     </div>
-    <div class="scratch-list-head"><span>已存记录</span><span id="scratchTotal">0</span></div>
-    <div class="scratch-list" id="scratchList"></div>
   </aside>
 
   <main id="main" tabindex="-1">
@@ -3043,6 +3077,157 @@ document.addEventListener("visibilitychange",function(){
 input.value=data.draft;
 renderList(); renderMeta();
 if(data.draft){ setStatus("已恢复上次草稿"); }
+})();
+</script>
+
+
+<script>
+/* 随手记窗口：标题栏拖动 + 八向缩放（对齐参考站窗口行为） */
+(function(){
+"use strict";
+var panel=document.getElementById("scratchPanel");
+if(!panel) return;
+var head=panel.querySelector(".scratch-head");
+if(!head) return;
+var DIRS={n:"上",ne:"右上",e:"右",se:"右下",s:"下",sw:"左下",w:"左",nw:"左上"};
+var EDGE=8, MIN_W=300, MIN_H=220;
+
+function desktop(){ return window.innerWidth>760; }
+function clamp(v,lo,hi){ return Math.max(lo,Math.min(v,Math.max(lo,hi))); }
+function minSize(){ return {w:Math.min(MIN_W,window.innerWidth-24),h:Math.min(MIN_H,window.innerHeight-24)}; }
+
+Object.keys(DIRS).forEach(function(dir){
+  var b=document.createElement("button");
+  b.type="button";
+  b.className="window-resize-handle resize-"+dir;
+  b.dataset.resizeDir=dir;
+  b.setAttribute("aria-label","从"+DIRS[dir]+"侧调整窗口大小；方向键微调");
+  b.title="从"+DIRS[dir]+"侧拖动缩放";
+  panel.appendChild(b);
+});
+
+var gesture=null;
+function place(){
+  var r=panel.getBoundingClientRect(), m=minSize();
+  var w=Math.min(r.width,window.innerWidth-16), h=Math.min(r.height,window.innerHeight-16);
+  var left=clamp(r.left,EDGE,window.innerWidth-w-EDGE);
+  var top=clamp(r.top,EDGE,window.innerHeight-h-EDGE);
+  panel.style.position="fixed";
+  panel.style.left=left+"px"; panel.style.top=top+"px";
+  panel.style.right="auto"; panel.style.bottom="auto";
+  panel.style.width=w+"px"; panel.style.height=h+"px";
+  panel.style.maxWidth="none"; panel.style.maxHeight="none";
+  panel.style.margin="0"; panel.style.animation="none";
+  return {left:left,top:top,width:w,height:h,min:m};
+}
+function resizeRect(start,dir,dx,dy){
+  var left=start.left, top=start.top, right=left+start.width, bottom=top+start.height;
+  if(dir.indexOf("w")>-1) left=clamp(left+dx,EDGE,right-start.min.w);
+  if(dir.indexOf("e")>-1) right=clamp(right+dx,left+start.min.w,window.innerWidth-EDGE);
+  if(dir.indexOf("n")>-1) top=clamp(top+dy,EDGE,bottom-start.min.h);
+  if(dir.indexOf("s")>-1) bottom=clamp(bottom+dy,top+start.min.h,window.innerHeight-EDGE);
+  return {left:left,top:top,width:right-left,height:bottom-top};
+}
+function apply(rect){
+  panel.style.left=rect.left+"px";
+  panel.style.top=rect.top+"px";
+  panel.style.width=rect.width+"px";
+  panel.style.height=rect.height+"px";
+}
+function paint(){
+  var g=gesture; if(!g||!g.pending) return;
+  g.frame=0;
+  if(g.dir) apply(g.pending);
+  else panel.style.transform="translate3d("+(g.pending.left-g.start.left)+"px,"+(g.pending.top-g.start.top)+"px,0)";
+}
+function queue(e){
+  var g=gesture; if(!g) return;
+  if(e.pointerId!=null&&e.pointerId!==g.pointerId) return;
+  var dx=e.clientX-g.x, dy=e.clientY-g.y;
+  g.pending=g.dir?resizeRect(g.start,g.dir,dx,dy):{
+    left:clamp(g.start.left+dx,EDGE,window.innerWidth-g.start.width-EDGE),
+    top:clamp(g.start.top+dy,EDGE,window.innerHeight-g.start.height-EDGE),
+    width:g.start.width,height:g.start.height
+  };
+  if(!g.frame) g.frame=requestAnimationFrame(paint);
+}
+function end(e){
+  var g=gesture; if(!g) return;
+  if(e&&e.pointerId!=null&&e.pointerId!==g.pointerId) return;
+  if(e&&e.type==="pointerup"&&Number.isFinite(e.clientX)) queue(e);
+  if(g.frame){ cancelAnimationFrame(g.frame); g.frame=0; }
+  if(g.pending){
+    if(g.dir) apply(g.pending);
+    else { panel.style.left=g.pending.left+"px"; panel.style.top=g.pending.top+"px"; }
+  }
+  panel.style.transform="";
+  panel.classList.remove("is-moving");
+  document.body.classList.remove("window-interacting");
+  gesture=null;
+}
+document.addEventListener("pointerdown",function(e){
+  if(!desktop()||gesture||panel.hidden) return;
+  if(e.pointerType==="mouse"&&e.button!==0) return;
+  var handle=e.target.closest(".window-resize-handle");
+  var view=handle?handle.closest(".scratch-panel"):e.target.closest(".scratch-panel");
+  if(!view||view!==panel) return;
+  var dir="";
+  if(handle){
+    if(handle.parentElement!==panel) return;
+    dir=handle.dataset.resizeDir||"";
+  }else{
+    var header=e.target.closest(".scratch-head");
+    if(!header||header.parentElement!==panel) return;
+    if(e.target.closest("button,a,input,textarea,select,[role='button']")) return;
+  }
+  e.preventDefault();
+  var start=place();
+  gesture={dir:dir,start:start,x:e.clientX,y:e.clientY,pointerId:e.pointerId,frame:0,pending:null};
+  panel.classList.add("is-moving");
+  document.body.classList.add("window-interacting");
+  if(e.target.setPointerCapture){ try{ e.target.setPointerCapture(e.pointerId); }catch(err){} }
+});
+document.addEventListener("pointermove",queue,{passive:true});
+document.addEventListener("pointerup",end);
+document.addEventListener("pointercancel",end);
+document.addEventListener("lostpointercapture",end);
+window.addEventListener("blur",function(){ end(); });
+document.addEventListener("keydown",function(e){
+  if(!desktop()||panel.hidden) return;
+  if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].indexOf(e.key)<0) return;
+  var handle=e.target.closest?e.target.closest(".window-resize-handle"):null;
+  var header=e.target.closest?e.target.closest(".scratch-head"):null;
+  var dir=handle?handle.dataset.resizeDir:"";
+  if(!dir&&!(header&&e.altKey)) return;
+  if(!dir&&header&&e.target.closest("button")) return;
+  e.preventDefault();
+  var r=panel.getBoundingClientRect();
+  var step=e.shiftKey?32:12;
+  var dx=e.key==="ArrowLeft"?-step:e.key==="ArrowRight"?step:0;
+  var dy=e.key==="ArrowUp"?-step:e.key==="ArrowDown"?step:0;
+  var m=minSize(), start={left:r.left,top:r.top,width:r.width,height:r.height,min:m};
+  if(dir){ apply(resizeRect(start,dir,dx,dy)); }
+  else{
+    panel.style.left=clamp(r.left+dx,EDGE,window.innerWidth-r.width-EDGE)+"px";
+    panel.style.top=clamp(r.top+dy,EDGE,window.innerHeight-r.height-EDGE)+"px";
+  }
+});
+function keepInView(){
+  if(panel.hidden||!desktop()||!panel.style.left) return;
+  var r=panel.getBoundingClientRect();
+  var w=Math.min(r.width,window.innerWidth-16), h=Math.min(r.height,window.innerHeight-16);
+  panel.style.width=w+"px"; panel.style.height=h+"px";
+  panel.style.left=clamp(r.left,EDGE,window.innerWidth-w-EDGE)+"px";
+  panel.style.top=clamp(r.top,EDGE,window.innerHeight-h-EDGE)+"px";
+}
+var raf=0;
+window.addEventListener("resize",function(){
+  if(raf) return;
+  raf=requestAnimationFrame(function(){ raf=0; keepInView(); });
+});
+new MutationObserver(function(){ if(!panel.hidden) requestAnimationFrame(keepInView); }).observe(panel,{attributes:true,attributeFilter:["hidden"]});
+head.tabIndex=0;
+head.title="拖动标题移动窗口；Alt + 方向键微调位置";
 })();
 </script>
 
