@@ -82,6 +82,7 @@ cd Prompt-Lab
 .
 ├─ README.md
 ├─ LICENSE
+├─ NOTICE.md                   # 内容构成与授权边界
 ├─ dist/
 │  └─ Prompt-Lab.html          # 单文件应用（构建产物，432 KB）
 ├─ docs/
@@ -110,7 +111,10 @@ cd Prompt-Lab
 
 ## 许可
 
-代码与原创文字采用 [MIT License](LICENSE)。案例原文版权归各自作者所有。
+- **代码与原创文字**（HTML / CSS / JavaScript、12 节课程讲义、模式库、分析报告、设计文档）：[MIT License](LICENSE)，版权归 PROMPT / LAB contributors。
+- **案例库引用的提示词原文**：版权归各自作者，**不在 MIT 授权范围内**，仅用于学习研究与评述，已标注作者与来源。
+
+两类内容的边界详见 [NOTICE.md](NOTICE.md)。
 
 ## 致谢
 
