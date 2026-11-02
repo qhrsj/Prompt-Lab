@@ -757,6 +757,62 @@ html,body{overflow-x:clip}
   .search-dialog{padding:56px 10px 16px}
   .search-results{max-height:52dvh}
 }
+
+/* ===== 随手记 ===== */
+.scratch-trigger{
+  position:relative;display:inline-flex;align-items:center;gap:5px;
+  margin:0 2px;padding:7px 3px;border:0;background:none;box-shadow:none;
+  color:var(--ink2);font:inherit;font-size:12px;letter-spacing:.01em;
+  cursor:pointer;border-radius:0;transition:color .18s ease;
+}
+.scratch-trigger:hover{color:var(--accent)}
+.scratch-trigger:focus-visible{outline:none;text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px;text-decoration-color:var(--accent2)}
+.scratch-dot{width:4px;height:4px;border-radius:50%;background:var(--accent);opacity:0;transform:scale(.6);transition:opacity .2s ease,transform .2s ease}
+.scratch-trigger.has-notes .scratch-dot{opacity:1;transform:scale(1)}
+.scratch-panel{
+  position:fixed;top:90px;right:24px;width:362px;max-width:calc(100vw - 32px);
+  z-index:55;display:flex;flex-direction:column;
+  background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:18px 18px 14px;max-height:calc(100vh - 112px);
+  box-shadow:0 30px 90px -42px rgba(14,32,26,.5),0 2px 10px rgba(14,32,26,.05);
+  animation:scratchIn .2s ease;
+}
+@keyframes scratchIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.scratch-panel{animation:none}}
+.scratch-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.scratch-kicker{font-family:var(--mono);font-size:8px;letter-spacing:.16em;color:var(--muted)}
+.scratch-title{font-size:16px;font-weight:600;letter-spacing:-.02em;margin:3px 0 0;color:var(--ink);line-height:1.4}
+.scratch-close{width:26px;height:26px;display:grid;place-items:center;border:0;background:none;color:var(--muted);font-size:18px;line-height:1;cursor:pointer;border-radius:7px;transition:color .15s,background .15s}
+.scratch-close:hover{color:var(--ink);background:var(--panel2)}
+.scratch-sub{font-size:10.5px;line-height:1.75;color:var(--muted);margin:7px 0 11px}
+#scratchInput{width:100%;min-height:118px;max-height:220px;resize:vertical;border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:10px 12px;font-size:13px;line-height:1.85;color:var(--ink);outline:none;transition:border-color .15s,background .15s}
+#scratchInput:focus{border-color:var(--accent2);background:var(--panel)}
+#scratchInput::placeholder{color:var(--muted);opacity:.75}
+.scratch-meta{display:flex;justify-content:space-between;gap:10px;margin:7px 1px 10px;font-size:10px;color:var(--muted)}
+.scratch-meta .is-saving{color:var(--warn)}
+.scratch-actions{display:flex;gap:7px;flex-wrap:wrap}
+.scratch-actions .btn{min-height:34px}
+.scratch-panel[hidden]{display:none}
+.scratch-list-head{display:flex;justify-content:space-between;align-items:baseline;margin:15px 1px 6px;padding-top:12px;border-top:1px solid var(--line2);font-family:var(--mono);font-size:8.5px;letter-spacing:.12em;color:var(--muted)}
+.scratch-list{overflow:auto;flex:1;min-height:0;max-height:190px;margin:0 -4px;padding:0 4px}
+.scratch-item{position:relative;padding:8px 8px 9px;border-radius:9px;cursor:pointer;transition:background .15s}
+.scratch-item:hover{background:var(--panel2)}
+.scratch-item-top{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:2px}
+.scratch-item time{font-family:var(--mono);font-size:9px;color:var(--muted)}
+.scratch-del{border:0;background:none;padding:2px 3px;font-size:9.5px;color:var(--muted);cursor:pointer;opacity:0;transition:opacity .15s,color .15s;border-radius:4px}
+.scratch-item:hover .scratch-del{opacity:1}
+.scratch-del:hover,.scratch-del.armed{color:var(--bad)}
+.scratch-del.armed{opacity:1;font-weight:600}
+.scratch-item p{font-size:12px;line-height:1.7;color:var(--ink2);margin:0;white-space:pre-wrap;word-break:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.scratch-empty{font-size:11.5px;color:var(--muted);line-height:1.8;padding:10px 2px 14px}
+@media(max-width:900px){.scratch-panel{top:79px;right:16px}}
+@media(max-width:640px){
+  .scratch-trigger{font-size:11.5px;padding:10px 2px;min-height:40px}
+  .scratch-panel{top:72px;left:12px;right:12px;width:auto;max-width:none;max-height:calc(100dvh - 88px);padding:16px 14px 12px;border-radius:14px}
+  #scratchInput{min-height:104px;font-size:16px;line-height:1.7}
+  .scratch-del{opacity:.55}
+  .scratch-actions .btn{flex:1;min-height:38px}
+}
 </style>
 </head>
 <body data-theme="studio" data-view="home">
@@ -828,6 +884,7 @@ html,body{overflow-x:clip}
     </div>
     <div class="top-status"><button class="global-search" id="searchTrigger" aria-label="搜索课程、模式与案例" type="button" aria-haspopup="dialog" aria-controls="searchDialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg><span>搜索课程、模式…</span><kbd>⌘ K</kbd></button>
       <span class="top-pill" id="topProgress"><b>0</b>/12 完成</span>
+      <button class="scratch-trigger" id="scratchTrigger" type="button" aria-haspopup="dialog" aria-controls="scratchPanel" aria-expanded="false" title="随手记 · 仅保存在本机">随手记<span class="scratch-dot" aria-hidden="true"></span></button>
       <button class="theme-trigger" id="themeTrigger" type="button" aria-haspopup="dialog" aria-controls="themeDialog" aria-expanded="false">
         <span class="theme-dots" id="themeDots" aria-hidden="true"></span>
         <span id="themeName">蓝白</span>
@@ -835,6 +892,23 @@ html,body{overflow-x:clip}
       </button>
     </div>
   </header>
+
+  <aside class="scratch-panel" id="scratchPanel" role="dialog" aria-modal="false" aria-labelledby="scratchTitle" hidden>
+    <div class="scratch-head">
+      <div><div class="scratch-kicker">QUICK NOTES</div><h3 class="scratch-title" id="scratchTitle">随手记</h3></div>
+      <button class="scratch-close" id="scratchClose" type="button" aria-label="关闭随手记">×</button>
+    </div>
+    <p class="scratch-sub">全局草稿，所有页面共用同一份内容；切换页面不会收起，只保存在这台设备的浏览器里。</p>
+    <textarea id="scratchInput" placeholder="把刚想到的一句、一个条件、一个待验证的问题写在这里……" aria-label="随手记草稿"></textarea>
+    <div class="scratch-meta"><span id="scratchStatus">等待输入</span><span id="scratchCount">0 字</span></div>
+    <div class="scratch-actions">
+      <button class="btn primary sm" id="scratchSave" type="button">存为一条</button>
+      <button class="btn sm" id="scratchCopy" type="button">复制</button>
+      <button class="btn ghost sm" id="scratchClear" type="button">清空</button>
+    </div>
+    <div class="scratch-list-head"><span>已存记录</span><span id="scratchTotal">0</span></div>
+    <div class="scratch-list" id="scratchList"></div>
+  </aside>
 
   <main id="main" tabindex="-1">
     <div class="viewhead">
@@ -2683,6 +2757,292 @@ function init(){
 }
 init();
 
+})();
+</script>
+
+
+<script>
+/* ================= 随手记（全局草稿 + 本地存储） ================= */
+(function(){
+"use strict";
+var KEY="pl_scratch_v1", MAX_ENTRIES=100, MAX_CHARS=20000;
+var panel=document.getElementById("scratchPanel");
+var trigger=document.getElementById("scratchTrigger");
+var input=document.getElementById("scratchInput");
+var listEl=document.getElementById("scratchList");
+var statusEl=document.getElementById("scratchStatus");
+var countEl=document.getElementById("scratchCount");
+var totalEl=document.getElementById("scratchTotal");
+var saveBtn=document.getElementById("scratchSave");
+var copyBtn=document.getElementById("scratchCopy");
+var clearBtn=document.getElementById("scratchClear");
+var closeBtn=document.getElementById("scratchClose");
+if(!panel||!trigger||!input||!listEl) return;
+
+var data=load(), saveTimer=null, clearTimer=null, clearArmed=false, pendingDel=null, delTimer=null, lastInputAt=0;
+
+function normalize(o){
+  o=(o&&typeof o==="object")?o:{};
+  var draft=typeof o.draft==="string"?o.draft.slice(0,MAX_CHARS):"";
+  var arr=Array.isArray(o.entries)?o.entries:[];
+  var seen={}, out=[];
+  arr.forEach(function(e){
+    if(!e||typeof e.text!=="string"||!e.text.trim()) return;
+    var id=String(e.id||("e"+Math.random().toString(36).slice(2)));
+    if(seen[id]) return;
+    seen[id]=1;
+    out.push({id:id,text:e.text.slice(0,MAX_CHARS),at:Number(e.at)||Date.now()});
+  });
+  out.sort(function(a,b){return b.at-a.at;});
+  return {draft:draft,entries:out.slice(0,MAX_ENTRIES),updatedAt:Number(o.updatedAt)||0};
+}
+function load(){
+  try{
+    var raw=localStorage.getItem(KEY);
+    return normalize(raw?JSON.parse(raw):null);
+  }catch(e){ return normalize(null); }
+}
+function persist(){
+  data.updatedAt=Date.now();
+  try{ localStorage.setItem(KEY,JSON.stringify(data)); }
+  catch(e){ setStatus("保存失败：本地存储不可用"); }
+}
+function setStatus(text,saving){
+  statusEl.textContent=text;
+  statusEl.classList.toggle("is-saving",!!saving);
+}
+function timeStr(ts){
+  var d=new Date(ts), p=function(n){return (n<10?"0":"")+n;};
+  return p(d.getMonth()+1)+"-"+p(d.getDate())+" "+p(d.getHours())+":"+p(d.getMinutes());
+}
+function chars(){ return input.value.replace(/\s/g,"").length; }
+function syncTrigger(){
+  var n=data.entries.length, has=!!input.value.trim()||n>0;
+  trigger.classList.toggle("has-notes",has);
+  trigger.setAttribute("aria-label","打开随手记"+(n?("，已存 "+n+" 条"):""));
+}
+function renderMeta(){
+  countEl.textContent=chars()+" 字";
+  totalEl.textContent=data.entries.length+" 条";
+  syncTrigger();
+}
+function renderList(){
+  listEl.innerHTML="";
+  if(!data.entries.length){
+    var empty=document.createElement("div");
+    empty.className="scratch-empty";
+    empty.textContent="还没有记录。写一句，按「存为一条」。";
+    listEl.appendChild(empty);
+    return;
+  }
+  data.entries.forEach(function(it){
+    var row=document.createElement("div");
+    row.className="scratch-item";
+    row.dataset.id=it.id;
+    row.tabIndex=0;
+    row.setAttribute("role","button");
+    row.setAttribute("aria-label","把这条记录追加到草稿");
+    var top=document.createElement("div");
+    top.className="scratch-item-top";
+    var t=document.createElement("time");
+    t.textContent=timeStr(it.at);
+    var del=document.createElement("button");
+    del.type="button";
+    del.className="scratch-del"+(pendingDel===it.id?" armed":"");
+    del.dataset.del=it.id;
+    del.textContent=pendingDel===it.id?"确认删除":"删除";
+    top.appendChild(t); top.appendChild(del);
+    var p=document.createElement("p");
+    p.textContent=it.text;
+    row.appendChild(top); row.appendChild(p);
+    listEl.appendChild(row);
+  });
+}
+function toast(msg){
+  var t=document.getElementById("toast");
+  if(!t){ return; }
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t=setTimeout(function(){t.classList.remove("show");},1600);
+}
+function copyText(text){
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(text).then(function(){toast("已复制");},function(){fallbackCopy(text);});
+  }else{ fallbackCopy(text); }
+}
+function fallbackCopy(text){
+  var ta=document.createElement("textarea");
+  ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{document.execCommand("copy");toast("已复制");}catch(e){toast("复制失败，请手动选择");}
+  document.body.removeChild(ta);
+}
+function flushDraft(){
+  if(saveTimer){ clearTimeout(saveTimer); saveTimer=null; }
+  data.draft=input.value.slice(0,MAX_CHARS);
+}
+function openPanel(){
+  panel.hidden=false;
+  trigger.setAttribute("aria-expanded","true");
+  renderList(); renderMeta();
+  setTimeout(function(){ input.focus(); },30);
+}
+function closePanel(focus){
+  panel.hidden=true;
+  trigger.setAttribute("aria-expanded","false");
+  if(focus){ trigger.focus(); }
+}
+function resetClear(){
+  clearArmed=false;
+  clearBtn.textContent="清空";
+  if(clearTimer){ clearTimeout(clearTimer); clearTimer=null; }
+}
+function resetDel(){
+  pendingDel=null;
+  if(delTimer){ clearTimeout(delTimer); delTimer=null; }
+  renderList();
+}
+function appendToDraft(text){
+  flushDraft();
+  var cur=input.value.replace(/\s+$/,"");
+  input.value=cur?(cur+"\n\n"+text):text;
+  data.draft=input.value.slice(0,MAX_CHARS);
+  persist(); renderMeta();
+  input.focus();
+  try{ input.setSelectionRange(input.value.length,input.value.length); }catch(e){}
+  setStatus("已追加到草稿 · "+timeStr(Date.now()));
+}
+
+input.addEventListener("input",function(){
+  lastInputAt=Date.now();
+  countEl.textContent=chars()+" 字";
+  trigger.classList.add("has-notes");
+  setStatus("保存中…",true);
+  if(clearArmed){ resetClear(); }
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(function(){
+    data.draft=input.value.slice(0,MAX_CHARS);
+    saveTimer=null;
+    persist();
+    setStatus("已保存 · "+timeStr(Date.now()));
+    renderMeta();
+  },380);
+});
+input.addEventListener("blur",function(){
+  if(saveTimer){
+    flushDraft(); persist(); setStatus("已保存 · "+timeStr(Date.now()));
+  }
+  renderMeta();
+});
+
+saveBtn.addEventListener("click",function(){
+  var text=input.value.trim();
+  if(!text){ setStatus("先写一句再存"); input.focus(); return; }
+  flushDraft();
+  data.entries.unshift({id:"n"+Date.now().toString(36),text:text.slice(0,MAX_CHARS),at:Date.now()});
+  data.entries=data.entries.slice(0,MAX_ENTRIES);
+  data.draft="";
+  input.value="";
+  persist(); renderList(); renderMeta();
+  setStatus("已存为记录 · "+timeStr(Date.now()));
+  input.focus();
+});
+
+copyBtn.addEventListener("click",function(){
+  var text=input.value.trim();
+  if(!text){ setStatus("草稿为空，没有可复制的内容"); return; }
+  copyText(text);
+  setStatus("草稿已复制");
+});
+
+clearBtn.addEventListener("click",function(){
+  if(!clearArmed){
+    clearArmed=true;
+    clearBtn.textContent="再点一次";
+    clearTimer=setTimeout(resetClear,2800);
+    return;
+  }
+  flushDraft();
+  data.draft="";
+  input.value="";
+  persist(); renderMeta(); resetClear();
+  setStatus("草稿已清空");
+  input.focus();
+});
+
+listEl.addEventListener("click",function(e){
+  var del=e.target.closest("[data-del]");
+  if(del){
+    e.stopPropagation();
+    var id=del.dataset.del;
+    if(pendingDel!==id){
+      pendingDel=id;
+      clearTimeout(delTimer);
+      delTimer=setTimeout(function(){ if(pendingDel===id) resetDel(); },3000);
+      renderList();
+      return;
+    }
+    data.entries=data.entries.filter(function(x){return x.id!==id;});
+    pendingDel=null;
+    clearTimeout(delTimer);
+    persist(); renderList(); renderMeta();
+    setStatus("已删除 1 条记录");
+    return;
+  }
+  var row=e.target.closest(".scratch-item");
+  if(row){
+    var item=data.entries.filter(function(x){return x.id===row.dataset.id;})[0];
+    if(item) appendToDraft(item.text);
+  }
+});
+listEl.addEventListener("keydown",function(e){
+  if(e.key!=="Enter"&&e.key!==" ") return;
+  var row=e.target.closest(".scratch-item");
+  if(!row) return;
+  e.preventDefault();
+  var item=data.entries.filter(function(x){return x.id===row.dataset.id;})[0];
+  if(item) appendToDraft(item.text);
+});
+
+trigger.addEventListener("click",function(){
+  if(panel.hidden) openPanel(); else closePanel(true);
+});
+closeBtn.addEventListener("click",function(){ closePanel(true); });
+document.addEventListener("keydown",function(e){
+  if(e.key!=="Escape"||panel.hidden) return;
+  var searchOpen=document.getElementById("searchDialog")&&!document.getElementById("searchDialog").hidden;
+  var themeOpen=document.getElementById("themeDialog")&&!document.getElementById("themeDialog").hidden;
+  var navOpen=document.body.classList.contains("nav-open");
+  if(searchOpen||themeOpen||navOpen) return;
+  closePanel(true);
+},true);
+
+window.addEventListener("storage",function(e){
+  if(e.key!==KEY||!e.newValue) return;
+  var next;
+  try{ next=normalize(JSON.parse(e.newValue)); }catch(err){ return; }
+  data=next;
+  var typing=document.activeElement===input&&(Date.now()-lastInputAt<2000);
+  if(!typing){
+    input.value=data.draft;
+    if(document.activeElement===input){
+      try{ input.setSelectionRange(input.value.length,input.value.length); }catch(e){}
+    }
+  }
+  renderList(); renderMeta();
+  setStatus(typing?"其他页面有更新（正在输入，暂不覆盖）":"已同步其他页面");
+});
+
+window.addEventListener("beforeunload",function(){
+  if(saveTimer){ flushDraft(); persist(); }
+});
+document.addEventListener("visibilitychange",function(){
+  if(document.hidden&&saveTimer){ flushDraft(); persist(); }
+});
+
+input.value=data.draft;
+renderList(); renderMeta();
+if(data.draft){ setStatus("已恢复上次草稿"); }
 })();
 </script>
 
