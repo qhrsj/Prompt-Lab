@@ -1,0 +1,15 @@
+# 忽略本地环境与过程产物
+.workbuddy/
+.obsidian/
+.vscode/
+node_modules/
+_work/
+_shots/
+.repo.json
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 设计源文件：含 2.6 MB 内嵌插画与第三方统计脚本，不随仓库分发
+Prompt-Lab-Gradient-Studio.html
